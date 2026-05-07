@@ -54,13 +54,34 @@ if [ ! -f ".env.local" ] && [ ! -f ".env" ]; then
   echo "created .env.local from .env.example"
 fi
 
-# --- Delegate all heavy lifting to verify-install.sh ---
+# --- Install Node dependencies (frozen lockfile, but allow native builds) ---
+# pnpm.onlyBuiltDependencies in package.json whitelists better-sqlite3, esbuild, sharp
+# so their native bindings actually compile.
 echo ""
-echo "Running verify-install.sh ..."
+echo "Installing dependencies ..."
+pnpm install --frozen-lockfile
+
+# --- Install Playwright Chromium (browser binary only, no sudo / no OS deps) ---
+# `--with-deps` would try to apt-install system libraries via sudo, which can't
+# prompt for a password under `curl | bash`. End users running locally on a dev
+# box already have the libs; CI installs them out-of-band.
 echo ""
-bash scripts/verify-install.sh
+echo "Installing Playwright Chromium ..."
+pnpm exec playwright install chromium
+
+# --- Apply database migrations (creates data/db.sqlite) ---
+echo ""
+echo "Applying database migrations ..."
+pnpm db:migrate
 
 # --- Done ---
 echo ""
-echo "✓ Install complete. Run \`pnpm dev\` (development) or \`pnpm start\` (production)."
-echo "  Open http://localhost:3000 — your first visit will prompt you to set the master vault passphrase."
+echo "================================================"
+echo "✓ Install complete."
+echo ""
+echo "  Start dev:   pnpm dev"
+echo "  Start prod:  pnpm build && pnpm start"
+echo ""
+echo "  Then open http://localhost:15123 — your first visit"
+echo "  will prompt you to set the master vault passphrase."
+echo "================================================"
