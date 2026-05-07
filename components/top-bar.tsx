@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, Lock, LockOpen, Moon, Settings, Sun } from "lucide-react";
+import { Lock, LockOpen, Moon, Settings, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -111,60 +111,29 @@ function VaultIndicator() {
   );
 }
 
-const navLinks = [
-  { href: "/", label: "Launchpad", icon: LayoutGrid },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
-
 export function TopBar() {
   const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 sm:px-6">
-        {/* Brand — app title, not a clickable tab */}
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm font-bold shadow-sm">
-            D
-          </div>
-          <span className="hidden sm:inline text-lg font-bold tracking-tight text-foreground">
-            Dashboard
-          </span>
-        </div>
-
-        {/* Visual separator between title and tabs */}
-        <div className="h-6 w-px bg-border" aria-hidden="true" />
-
-        {/* Nav */}
-        <nav className="flex items-center gap-1" aria-label="Main navigation">
-          {navLinks.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                )}
-                aria-current={active ? "page" : undefined}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Vault + theme */}
-        <div className="flex items-center gap-1">
+      <div className="mx-auto flex h-14 max-w-7xl items-center px-4 sm:px-6">
+        {/* Vault + theme + settings */}
+        <div className="ml-auto flex items-center gap-1">
           <VaultIndicator />
           <ThemeToggle />
+          <Link
+            href="/settings"
+            aria-label="Settings"
+            aria-current={pathname === "/settings" ? "page" : undefined}
+            className={cn(
+              "inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors",
+              pathname === "/settings"
+                ? "bg-secondary text-secondary-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+            )}
+          >
+            <Settings className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </header>

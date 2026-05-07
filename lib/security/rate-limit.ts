@@ -29,7 +29,7 @@ const PRUNE_INTERVAL_MS = 10 * 60_000;
 const PRUNE_AGE_MS = 24 * 60 * 60_000;
 
 // Guard against duplicate setInterval registrations under Next.js hot-reload.
-const GUARD = Symbol.for("dashboard.rateLimit");
+const GUARD = Symbol.for("launchpad.rateLimit");
 declare global {
   // eslint-disable-next-line no-var
   var __rateLimitPruner: NodeJS.Timeout | undefined;

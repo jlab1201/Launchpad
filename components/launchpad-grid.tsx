@@ -89,8 +89,8 @@ export function LaunchpadGrid({ initialApps }: LaunchpadGridProps) {
   // Listen for settings-page mutations so grid can refresh
   useEffect(() => {
     const handler = () => void refreshApps();
-    window.addEventListener("dashboard:apps-changed", handler);
-    return () => window.removeEventListener("dashboard:apps-changed", handler);
+    window.addEventListener("launchpad:apps-changed", handler);
+    return () => window.removeEventListener("launchpad:apps-changed", handler);
   }, [refreshApps]);
 
   if (loading && apps.length === 0) {

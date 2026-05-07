@@ -1,13 +1,12 @@
 {
-  "name": "dashboard",
+  "name": "launchpad",
   "version": "0.1.0",
   "private": false,
-  "description": "Internal webapp launchpad with credential vault, status checks, and auto-screenshot thumbnails.",
+  "description": "A self-hosted launchpad for your internal web apps, with an encrypted credential vault, live status badges, and auto-captured screenshot thumbnails.",
   "keywords": [
-    "dashboard",
+    "launchpad",
     "self-hosted",
     "credential-vault",
-    "launchpad",
     "next.js",
     "libsodium",
     "argon2id"
@@ -16,12 +15,12 @@
   "author": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jlab1201/dashboard.git"
+    "url": "https://github.com/jlab1201/Launchpad.git"
   },
   "bugs": {
-    "url": "https://github.com/jlab1201/dashboard/issues"
+    "url": "https://github.com/jlab1201/Launchpad/issues"
   },
-  "homepage": "https://github.com/jlab1201/dashboard#readme",
+  "homepage": "https://github.com/jlab1201/Launchpad#readme",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

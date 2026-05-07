@@ -5,9 +5,9 @@ import { TopBar } from "@/components/top-bar";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Dashboard — Internal Webapp Launchpad",
+  title: "Launchpad",
   description:
-    "A self-hosted launchpad for internal web apps with credential vault, status monitoring, and auto-screenshots.",
+    "A self-hosted launchpad for your internal web apps, with an encrypted credential vault, live status badges, and auto-captured screenshot thumbnails.",
 };
 
 export default function RootLayout({

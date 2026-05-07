@@ -1,4 +1,4 @@
-# Dashboard
+# Launchpad
 
 A self-hosted launchpad for the internal webapps you build, with a credential vault and auto-screenshot thumbnails.
 
@@ -22,10 +22,10 @@ A self-hosted launchpad for the internal webapps you build, with a credential va
 ## One-line install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jlab1201/dashboard/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jlab1201/Launchpad/main/scripts/install.sh | bash
 ```
 
-Inspect the script first: https://github.com/jlab1201/dashboard/blob/main/scripts/install.sh
+Inspect the script first: https://github.com/jlab1201/Launchpad/blob/main/scripts/install.sh
 
 Requires Node.js 20 LTS and pnpm (via `corepack enable`).
 
@@ -34,8 +34,8 @@ Requires Node.js 20 LTS and pnpm (via `corepack enable`).
 ## Manual install
 
 ```bash
-git clone https://github.com/jlab1201/dashboard.git
-cd dashboard
+git clone https://github.com/jlab1201/Launchpad.git
+cd Launchpad
 pnpm install
 pnpm playwright install chromium
 pnpm db:migrate
@@ -48,7 +48,7 @@ Open `http://localhost:15123`. The app runs on port 15123 by default (override w
 
 ## First run / vault setup
 
-The first time you open the dashboard you will be prompted for a master passphrase. This passphrase derives the encryption key for your credential vault via Argon2id. It is never written to disk — if you lose it, stored credentials are unrecoverable (the apps themselves and their thumbnails are not affected). The vault is locked by default after every server restart, so you will re-enter the passphrase each session.
+The first time you open the app you will be prompted for a master passphrase. This passphrase derives the encryption key for your credential vault via Argon2id. It is never written to disk — if you lose it, stored credentials are unrecoverable (the apps themselves and their thumbnails are not affected). The vault is locked by default after every server restart, so you will re-enter the passphrase each session.
 
 ---
 
@@ -88,23 +88,23 @@ Available scripts (from `package.json`):
 ```bash
 pnpm build
 pnpm add -g pm2
-pm2 start "node .next/standalone/server.js" --name dashboard
+pm2 start "node .next/standalone/server.js" --name launchpad
 pm2 save
 pm2 startup   # follow the printed command to enable auto-start on reboot
 ```
 
 ### systemd (user-level, no root required)
 
-Create `~/.config/systemd/user/dashboard.service`:
+Create `~/.config/systemd/user/launchpad.service`:
 
 ```ini
 [Unit]
-Description=Dashboard launchpad
+Description=Launchpad
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/path/to/Dashboard
+WorkingDirectory=/path/to/Launchpad
 ExecStart=/usr/bin/node .next/standalone/server.js
 Restart=on-failure
 Environment=NODE_ENV=production
@@ -118,10 +118,10 @@ Then:
 
 ```bash
 systemctl --user daemon-reload
-systemctl --user enable --now dashboard
+systemctl --user enable --now launchpad
 ```
 
-Replace `/path/to/Dashboard` with the absolute path to this repository.
+Replace `/path/to/Launchpad` with the absolute path to this repository.
 
 ### Docker
 
@@ -134,8 +134,8 @@ The compose file mounts `./data` into the container so the vault, database, and 
 To build and run without compose:
 
 ```bash
-docker build -t dashboard .
-docker run -d -p 15123:15123 -v "$(pwd)/data:/app/data" dashboard
+docker build -t launchpad .
+docker run -d -p 15123:15123 -v "$(pwd)/data:/app/data" launchpad
 ```
 
 ### TLS and HSTS
@@ -146,7 +146,7 @@ When terminating TLS at a reverse proxy (nginx, Caddy, Traefik), enable HSTS at 
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 ```
 
-The Next.js process intentionally does not set HSTS — sending it from a non-TLS deployment can lock browsers out of the dashboard.
+The Next.js process intentionally does not set HSTS — sending it from a non-TLS deployment can lock browsers out of the app.
 
 ---
 
@@ -166,8 +166,8 @@ The app sets the following HTTP security headers on all routes via `next.config.
 - `X-Frame-Options: DENY` — blocks clickjacking.
 - `X-Content-Type-Options: nosniff` — prevents MIME-type sniffing.
 - `Referrer-Policy: strict-origin-when-cross-origin`.
-- `Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()` — disables sensitive browser APIs not used by the dashboard.
-- `Cross-Origin-Opener-Policy: same-origin` — isolates the dashboard from cross-origin window references.
+- `Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()` — disables sensitive browser APIs not used by the app.
+- `Cross-Origin-Opener-Policy: same-origin` — isolates the app from cross-origin window references.
 - `Content-Security-Policy` — production builds only (omitted in dev to keep Next.js HMR working).
 
 ---
@@ -198,7 +198,7 @@ PORT=15124 pnpm dev
 
 ## Contributing
 
-Issues and PRs welcome at https://github.com/jlab1201/dashboard. For security disclosures, please open a private security advisory on GitHub rather than a public issue.
+Issues and PRs welcome at https://github.com/jlab1201/Launchpad. For security disclosures, please open a private security advisory on GitHub rather than a public issue.
 
 ---
 

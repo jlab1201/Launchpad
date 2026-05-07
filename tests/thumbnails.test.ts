@@ -81,7 +81,7 @@ vi.mock("@/lib/db/client", () => ({
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "dashboard-thumb-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "launchpad-thumb-"));
   process.env.THUMBNAIL_DIR = tmpDir;
 
   // Reset all mocks.

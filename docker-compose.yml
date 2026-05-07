@@ -1,5 +1,5 @@
 services:
-  dashboard:
+  launchpad:
     build: .
     ports:
       - "15123:15123"

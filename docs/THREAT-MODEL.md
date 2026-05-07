@@ -1,8 +1,8 @@
-# Threat Model — Dashboard Credential Vault (v1)
+# Threat Model — Launchpad Credential Vault (v1)
 
 ## Overview
 
-The Dashboard stores credentials (usernames+passwords, API tokens) for registered internal webapps. Credentials are encrypted at rest using a passphrase-derived key that lives only in process memory for the duration of a session.
+Launchpad stores credentials (usernames+passwords, API tokens) for registered internal webapps. Credentials are encrypted at rest using a passphrase-derived key that lives only in process memory for the duration of a session.
 
 ---
 
@@ -50,7 +50,7 @@ An attacker with code execution on the host reads the process heap while the vau
 
 ### 3. Malicious browser extension
 
-A malicious extension running in the same browser as the Dashboard UI could intercept network requests to `/api/vault/unlock` and capture the passphrase, or read DOM state.
+A malicious extension running in the same browser as the Launchpad UI could intercept network requests to `/api/vault/unlock` and capture the passphrase, or read DOM state.
 
 **Mitigations:**
 - The passphrase is only sent once (or on manual re-unlock) — short exposure window.
@@ -63,13 +63,13 @@ A malicious extension running in the same browser as the Dashboard UI could inte
 
 ### 4. Phishing of the unlock dialog
 
-A malicious page spoofs the Dashboard unlock dialog and captures the passphrase.
+A malicious page spoofs the Launchpad unlock dialog and captures the passphrase.
 
 **Mitigations:**
 - The dashboard runs on `localhost`. A phishing page cannot spoof a `localhost` origin in a browser — same-origin policy blocks cross-origin reads.
-- The passphrase is only entered on the Dashboard's own domain.
+- The passphrase is only entered on Launchpad's own domain.
 
-**Residual risk:** If the user installs the Dashboard on a public IP or behind a tunnel without authentication, the unlock endpoint is reachable from the internet. Production deployments should sit behind at minimum an IP whitelist or an SSH tunnel. This is called out in the README.
+**Residual risk:** If the user installs Launchpad on a public IP or behind a tunnel without authentication, the unlock endpoint is reachable from the internet. Production deployments should sit behind at minimum an IP whitelist or an SSH tunnel. This is called out in the README.
 
 ---
 

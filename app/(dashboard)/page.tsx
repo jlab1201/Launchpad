@@ -32,7 +32,7 @@ async function fetchApps(): Promise<Webapp[]> {
   }
 }
 
-export default async function DashboardPage() {
+export default async function LaunchpadPage() {
   const apps = await fetchApps();
 
   return (

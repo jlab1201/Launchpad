@@ -68,7 +68,7 @@ export function SettingsPanel({ initialApps }: SettingsPanelProps) {
   const [pendingAction, setPendingAction] = useState<"add" | null>(null);
 
   const notifyGrid = useCallback(() => {
-    window.dispatchEvent(new Event("dashboard:apps-changed"));
+    window.dispatchEvent(new Event("launchpad:apps-changed"));
   }, []);
 
   const handleAdded = useCallback(
@@ -138,8 +138,8 @@ export function SettingsPanel({ initialApps }: SettingsPanelProps) {
         // ignore
       }
     };
-    window.addEventListener("dashboard:apps-changed", handler);
-    return () => window.removeEventListener("dashboard:apps-changed", handler);
+    window.addEventListener("launchpad:apps-changed", handler);
+    return () => window.removeEventListener("launchpad:apps-changed", handler);
   }, []);
 
   return (

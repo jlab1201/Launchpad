@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "================================================"
-echo " Dashboard — installer"
+echo " Launchpad — installer"
 echo "================================================"
 echo ""
 
@@ -25,19 +25,19 @@ if ! command -v pnpm >/dev/null 2>&1; then
   exit 1
 fi
 
-# --- Locate or download the Dashboard project ---
+# --- Locate or download the Launchpad project ---
 # Defaults aim at the public GitHub release. Tarball download is anonymous
 # and bypasses git credential helpers (which can prompt for a password
 # even on public repos if the user has one configured for github.com).
-REPO_OWNER="${DASHBOARD_REPO_OWNER:-jlab1201}"
-REPO_NAME="${DASHBOARD_REPO_NAME:-dashboard}"
-REPO_REF="${DASHBOARD_REPO_REF:-main}"
-TARGET_DIR="${DASHBOARD_DIR:-dashboard}"
+REPO_OWNER="${LAUNCHPAD_REPO_OWNER:-jlab1201}"
+REPO_NAME="${LAUNCHPAD_REPO_NAME:-Launchpad}"
+REPO_REF="${LAUNCHPAD_REPO_REF:-main}"
+TARGET_DIR="${LAUNCHPAD_DIR:-launchpad}"
 TARBALL_URL="https://codeload.github.com/${REPO_OWNER}/${REPO_NAME}/tar.gz/refs/heads/${REPO_REF}"
 
-if [ -f "./package.json" ] && grep -q '"name": "dashboard"' ./package.json 2>/dev/null; then
-  : # already inside a Dashboard checkout — nothing to do
-elif [ -f "$TARGET_DIR/package.json" ] && grep -q '"name": "dashboard"' "$TARGET_DIR/package.json" 2>/dev/null; then
+if [ -f "./package.json" ] && grep -q '"name": "launchpad"' ./package.json 2>/dev/null; then
+  : # already inside a Launchpad checkout — nothing to do
+elif [ -f "$TARGET_DIR/package.json" ] && grep -q '"name": "launchpad"' "$TARGET_DIR/package.json" 2>/dev/null; then
   echo "Reusing existing checkout at ./$TARGET_DIR"
   cd "$TARGET_DIR"
 else
@@ -50,11 +50,11 @@ else
     exit 1
   fi
   if [ -e "$TARGET_DIR" ]; then
-    echo "Error: ./$TARGET_DIR exists but isn't a Dashboard checkout. Move/remove it, or set DASHBOARD_DIR=somewhere-else, then re-run." >&2
+    echo "Error: ./$TARGET_DIR exists but isn't a Launchpad checkout. Move/remove it, or set LAUNCHPAD_DIR=somewhere-else, then re-run." >&2
     exit 1
   fi
 
-  echo "Downloading Dashboard ($REPO_OWNER/$REPO_NAME @ $REPO_REF) ..."
+  echo "Downloading Launchpad ($REPO_OWNER/$REPO_NAME @ $REPO_REF) ..."
   mkdir -p "$TARGET_DIR"
   # `--strip-components=1` flattens the GitHub-generated `<repo>-<ref>/` prefix.
   # Pipe straight from curl to tar — no temp file, no auth path.
@@ -92,7 +92,7 @@ pnpm build
 PORT="${PORT:-15123}"
 export PORT
 
-if [ "${DASHBOARD_NO_START:-0}" = "1" ]; then
+if [ "${LAUNCHPAD_NO_START:-0}" = "1" ]; then
   echo ""
   echo "================================================"
   echo "✓ Install complete (autostart skipped)."
@@ -105,13 +105,13 @@ fi
 
 echo ""
 echo "================================================"
-echo "✓ Install complete. Starting Dashboard ..."
+echo "✓ Install complete. Starting Launchpad ..."
 echo ""
 echo "  URL:    http://localhost:${PORT}"
 echo "  Stop:   Ctrl+C"
 echo ""
 echo "  Your first visit will prompt you to set the master vault passphrase."
-echo "  To skip autostart on future installs, set DASHBOARD_NO_START=1."
+echo "  To skip autostart on future installs, set LAUNCHPAD_NO_START=1."
 echo "================================================"
 echo ""
 

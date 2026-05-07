@@ -16,7 +16,7 @@ import { captureThumbnail } from "./runner";
 const INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 // Use a plain string key on globalThis — Symbol cannot be used in declare global.
-const GUARD_KEY = "dashboard.thumbnailScheduler";
+const GUARD_KEY = "launchpad.thumbnailScheduler";
 
 type GlobalWithGuard = typeof globalThis & {
   [k: string]: ReturnType<typeof setInterval> | undefined;

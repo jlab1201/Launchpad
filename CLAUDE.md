@@ -146,7 +146,7 @@ Use the backend-dev agent to design the database schema for user profiles.
 
 ## Stack
 
-**Project:** Dashboard — internal-webapp launchpad with credential vault, status checks, and auto-screenshot thumbnails. Single-process, self-hosted, designed for public release.
+**Project:** Launchpad — self-hosted internal-webapp grid with credential vault, status checks, and auto-screenshot thumbnails. Single-process, designed for public release.
 
 | Layer | Choice |
 |---|---|
@@ -187,7 +187,7 @@ Use the backend-dev agent to design the database schema for user profiles.
 ## File Ownership (Conflict Prevention)
 
 ```
-Dashboard/
+Launchpad/
 ├── app/                                # Next.js App Router
 │   ├── (dashboard)/page.tsx            # main launchpad grid           → frontend-dev
 │   ├── settings/page.tsx               # registration / edit UI        → frontend-dev
