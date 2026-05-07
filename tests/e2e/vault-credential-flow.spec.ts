@@ -75,7 +75,7 @@ test.describe
       const res = await request.post("/api/apps", {
         data: {
           name: "E2E-Vault-Test",
-          url: "http://localhost:3000",
+          url: "http://localhost:15123",
           authType: "bearer",
           autoScreenshot: false,
           credential: { kind: "token", token: FAKE_TOKEN },
@@ -145,7 +145,7 @@ test.describe
       const res = await request.post("/api/apps", {
         data: {
           name: "E2E-Locked-Test",
-          url: "http://localhost:3000",
+          url: "http://localhost:15123",
           authType: "bearer",
           autoScreenshot: false,
           credential: { kind: "token", token: "should-fail-token" },
@@ -198,12 +198,12 @@ test.describe
       // Register an app with the UUID as token (vault is unlocked from step 7)
       // We do this by opening the DB in write mode — but we must use the API to
       // ensure the vault layer runs. Use fetch directly from the test node process.
-      const fetchRes = await fetch("http://localhost:3000/api/apps", {
+      const fetchRes = await fetch("http://localhost:15123/api/apps", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "E2E-UUID-Token-Check",
-          url: "http://localhost:3000",
+          url: "http://localhost:15123",
           authType: "bearer",
           autoScreenshot: false,
           credential: { kind: "token", token: uniqueToken },

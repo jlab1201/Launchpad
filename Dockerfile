@@ -22,7 +22,7 @@ FROM mcr.microsoft.com/playwright:v1.59.1-jammy AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=15123
 ENV HOSTNAME=0.0.0.0
 
 # Copy the Next.js standalone bundle
@@ -37,6 +37,6 @@ RUN mkdir -p /app/data && chown -R node:node /app
 
 USER node
 
-EXPOSE 3000
+EXPOSE 15123
 
 CMD ["node", "server.js"]

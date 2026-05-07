@@ -217,7 +217,7 @@ export function WebappForm({ initial, onSuccess, onCancel, onVaultLocked }: Weba
           type="url"
           value={form.url}
           onChange={(e) => set("url", e.target.value)}
-          placeholder="http://localhost:3000"
+          placeholder="http://localhost:15123"
           aria-invalid={!!errors.url}
           aria-describedby={errors.url ? "err-url" : undefined}
         />

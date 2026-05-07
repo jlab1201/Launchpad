@@ -42,7 +42,7 @@ pnpm db:migrate
 pnpm dev
 ```
 
-Open `http://localhost:3000`. The app runs on port 3000 by default.
+Open `http://localhost:15123`. The app runs on port 15123 by default (override with `PORT` in `.env.local`).
 
 ---
 
@@ -58,7 +58,7 @@ Set these environment variables (copy `.env.example` to `.env.local`):
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `PORT` | `3000` | HTTP port the Next.js server listens on |
+| `PORT` | `15123` | HTTP port the Next.js server listens on |
 | `VAULT_IDLE_TIMEOUT_MS` | `1800000` | Milliseconds of inactivity before the vault auto-locks (default 30 min) |
 
 ---
@@ -108,7 +108,7 @@ WorkingDirectory=/path/to/Dashboard
 ExecStart=/usr/bin/node .next/standalone/server.js
 Restart=on-failure
 Environment=NODE_ENV=production
-Environment=PORT=3000
+Environment=PORT=15123
 
 [Install]
 WantedBy=default.target
@@ -129,13 +129,13 @@ Replace `/path/to/Dashboard` with the absolute path to this repository.
 docker compose up -d
 ```
 
-The compose file mounts `./data` into the container so the vault, database, and thumbnails persist across restarts. The image exposes port 3000.
+The compose file mounts `./data` into the container so the vault, database, and thumbnails persist across restarts. The image exposes port 15123.
 
 To build and run without compose:
 
 ```bash
 docker build -t dashboard .
-docker run -d -p 3000:3000 -v "$(pwd)/data:/app/data" dashboard
+docker run -d -p 15123:15123 -v "$(pwd)/data:/app/data" dashboard
 ```
 
 ### TLS and HSTS
@@ -188,10 +188,10 @@ Try `pnpm rebuild better-sqlite3`. If that does not resolve it, run `node-gyp re
 **Playwright cannot find Chromium**
 Run `pnpm playwright install chromium` from the project root. This downloads the browser binary that Playwright uses for thumbnail capture and e2e tests.
 
-**Port 3000 is already in use**
+**Port 15123 is already in use**
 Start on a different port:
 ```bash
-PORT=3001 pnpm dev
+PORT=15124 pnpm dev
 ```
 
 ---

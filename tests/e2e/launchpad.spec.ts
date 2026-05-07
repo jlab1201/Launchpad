@@ -3,7 +3,7 @@
  *
  * Flow:
  *   1. Navigate to /   → empty state visible.
- *   2. Go to Settings, add the "Self" webapp (points at localhost:3000, no auth).
+ *   2. Go to Settings, add the "Self" webapp (points at localhost:15123, no auth).
  *      Expect a success toast.
  *   3. Return to /.    → "Self" tile visible.
  *      Status badge turns green within 90 s (polls /api/status).
@@ -86,7 +86,7 @@ test("step 2 — add 'Self' webapp via Settings and see success toast", async ({
 
   // Fill the form
   await page.locator("#webapp-name").fill("Self");
-  await page.locator("#webapp-url").fill("http://localhost:3000");
+  await page.locator("#webapp-url").fill("http://localhost:15123");
 
   // Auth type is "none" by default — no credential fields needed.
   // Uncheck auto-screenshot so the test doesn't wait for a real screenshot.

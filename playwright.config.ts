@@ -7,13 +7,13 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never" }]],
 
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "http://localhost:15123",
     trace: "retain-on-failure",
   },
 
   webServer: {
     command: "pnpm build && pnpm start",
-    url: "http://localhost:3000",
+    url: "http://localhost:15123",
     timeout: 120_000,
     reuseExistingServer: !process.env.CI,
   },

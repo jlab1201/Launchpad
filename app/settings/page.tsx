@@ -9,7 +9,7 @@ import type { Webapp } from "@/lib/contracts";
 async function fetchApps(): Promise<Webapp[]> {
   try {
     const hdrs = await headers();
-    const host = hdrs.get("host") ?? "localhost:3000";
+    const host = hdrs.get("host") ?? "localhost:15123";
     const proto = process.env.NODE_ENV === "production" ? "https" : "http";
     const res = await fetch(`${proto}://${host}/api/apps`, {
       cache: "no-store",
