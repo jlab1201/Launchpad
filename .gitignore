@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data directory (db, thumbnails, vault metadata)
+data/*
+!data/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Test artifacts
+playwright-report/
+test-results/
+coverage/
+
+# Claude Code (local dev tooling — not part of the product)
+.claude/
+
+# Local agent-session memory
+.remember/
+
+# Editors
+.vscode/
+.idea/
+
+# Crypto material that must never ship
+*.pem
+*.key
+vault.meta.json
+
+# Misc build outputs
+build/
+dist/
+.nyc_output/

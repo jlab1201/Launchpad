@@ -1,0 +1,1 @@
+ALTER TABLE `webapps` ADD `thumbnail_url` text;

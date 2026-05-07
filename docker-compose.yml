@@ -1,0 +1,13 @@
+services:
+  dashboard:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      NODE_ENV: production
+      DATABASE_PATH: ./data/db.sqlite
+      THUMBNAIL_DIR: ./data/thumbnails
+      VAULT_IDLE_TIMEOUT_MS: 1800000
+    restart: unless-stopped
