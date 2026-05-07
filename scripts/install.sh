@@ -25,26 +25,40 @@ if ! command -v pnpm >/dev/null 2>&1; then
   exit 1
 fi
 
-# --- Locate or clone the Dashboard project ---
-REPO_URL="${DASHBOARD_REPO_URL:-https://github.com/jlab1201/dashboard.git}"
+# --- Locate or download the Dashboard project ---
+# Defaults aim at the public GitHub release. Tarball download is anonymous
+# and bypasses git credential helpers (which can prompt for a password
+# even on public repos if the user has one configured for github.com).
+REPO_OWNER="${DASHBOARD_REPO_OWNER:-jlab1201}"
+REPO_NAME="${DASHBOARD_REPO_NAME:-dashboard}"
+REPO_REF="${DASHBOARD_REPO_REF:-main}"
 TARGET_DIR="${DASHBOARD_DIR:-dashboard}"
+TARBALL_URL="https://codeload.github.com/${REPO_OWNER}/${REPO_NAME}/tar.gz/refs/heads/${REPO_REF}"
 
 if [ -f "./package.json" ] && grep -q '"name": "dashboard"' ./package.json 2>/dev/null; then
   : # already inside a Dashboard checkout — nothing to do
-elif [ -d "$TARGET_DIR/.git" ] && [ -f "$TARGET_DIR/package.json" ] && grep -q '"name": "dashboard"' "$TARGET_DIR/package.json" 2>/dev/null; then
+elif [ -f "$TARGET_DIR/package.json" ] && grep -q '"name": "dashboard"' "$TARGET_DIR/package.json" 2>/dev/null; then
   echo "Reusing existing checkout at ./$TARGET_DIR"
   cd "$TARGET_DIR"
 else
-  if ! command -v git >/dev/null 2>&1; then
-    echo "Error: git not found. Install git first, or clone the repo manually and re-run." >&2
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "Error: curl not found. Install curl, or download the repo manually and re-run this script from inside it." >&2
+    exit 1
+  fi
+  if ! command -v tar >/dev/null 2>&1; then
+    echo "Error: tar not found. Install tar, or download the repo manually and re-run this script from inside it." >&2
     exit 1
   fi
   if [ -e "$TARGET_DIR" ]; then
     echo "Error: ./$TARGET_DIR exists but isn't a Dashboard checkout. Move/remove it, or set DASHBOARD_DIR=somewhere-else, then re-run." >&2
     exit 1
   fi
-  echo "Cloning $REPO_URL into ./$TARGET_DIR ..."
-  git clone --depth 1 "$REPO_URL" "$TARGET_DIR"
+
+  echo "Downloading Dashboard ($REPO_OWNER/$REPO_NAME @ $REPO_REF) ..."
+  mkdir -p "$TARGET_DIR"
+  # `--strip-components=1` flattens the GitHub-generated `<repo>-<ref>/` prefix.
+  # Pipe straight from curl to tar — no temp file, no auth path.
+  curl -fsSL "$TARBALL_URL" | tar -xz -C "$TARGET_DIR" --strip-components=1
   cd "$TARGET_DIR"
 fi
 
@@ -54,17 +68,12 @@ if [ ! -f ".env.local" ] && [ ! -f ".env" ]; then
   echo "created .env.local from .env.example"
 fi
 
-# --- Install Node dependencies (frozen lockfile, but allow native builds) ---
-# pnpm.onlyBuiltDependencies in package.json whitelists better-sqlite3, esbuild, sharp
-# so their native bindings actually compile.
+# --- Install Node dependencies (frozen lockfile, allow whitelisted native builds) ---
 echo ""
 echo "Installing dependencies ..."
 pnpm install --frozen-lockfile
 
-# --- Install Playwright Chromium (browser binary only, no sudo / no OS deps) ---
-# `--with-deps` would try to apt-install system libraries via sudo, which can't
-# prompt for a password under `curl | bash`. End users running locally on a dev
-# box already have the libs; CI installs them out-of-band.
+# --- Install Playwright Chromium (browser binary only — no sudo / no OS deps) ---
 echo ""
 echo "Installing Playwright Chromium ..."
 pnpm exec playwright install chromium
@@ -74,14 +83,37 @@ echo ""
 echo "Applying database migrations ..."
 pnpm db:migrate
 
-# --- Done ---
+# --- Build the production bundle so we can autostart cleanly ---
+echo ""
+echo "Building production bundle ..."
+pnpm build
+
+# --- Autostart unless the caller opted out ---
+PORT="${PORT:-15123}"
+export PORT
+
+if [ "${DASHBOARD_NO_START:-0}" = "1" ]; then
+  echo ""
+  echo "================================================"
+  echo "✓ Install complete (autostart skipped)."
+  echo ""
+  echo "  Start when ready:  cd $(basename "$PWD") && pnpm start"
+  echo "  URL:               http://localhost:${PORT}"
+  echo "================================================"
+  exit 0
+fi
+
 echo ""
 echo "================================================"
-echo "✓ Install complete."
+echo "✓ Install complete. Starting Dashboard ..."
 echo ""
-echo "  Start dev:   pnpm dev"
-echo "  Start prod:  pnpm build && pnpm start"
+echo "  URL:    http://localhost:${PORT}"
+echo "  Stop:   Ctrl+C"
 echo ""
-echo "  Then open http://localhost:15123 — your first visit"
-echo "  will prompt you to set the master vault passphrase."
+echo "  Your first visit will prompt you to set the master vault passphrase."
+echo "  To skip autostart on future installs, set DASHBOARD_NO_START=1."
 echo "================================================"
+echo ""
+
+# `exec` so Ctrl+C goes straight to Next.js with no shell sitting in the middle.
+exec pnpm start

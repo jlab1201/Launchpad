@@ -12,7 +12,10 @@ RUN pnpm install --frozen-lockfile
 
 # Copy source and build
 COPY . .
-RUN pnpm build
+# NEXT_BUILD_STANDALONE=1 tells next.config.ts to emit `.next/standalone/`,
+# which the runtime stage copies out. Local installs leave this unset so
+# `pnpm start` works without the standalone-output warning.
+RUN NEXT_BUILD_STANDALONE=1 pnpm build
 
 # Stage 2: runtime
 # Use the official Playwright image so Chromium and its system deps are present

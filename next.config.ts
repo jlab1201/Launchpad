@@ -1,10 +1,13 @@
 import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === "production";
+// Only emit `.next/standalone` when explicitly requested (Docker / pm2). When
+// unset, `pnpm build` produces a regular build that `pnpm start` can serve
+// without the "next start does not work with output: standalone" warning.
+const isStandalone = process.env.NEXT_BUILD_STANDALONE === "1";
 
 const nextConfig: NextConfig = {
-  // Produce a self-contained bundle under .next/standalone for Docker / pm2 deploys.
-  output: "standalone",
+  ...(isStandalone ? { output: "standalone" as const } : {}),
   // Server-only packages that must not be bundled into the client
   serverExternalPackages: ["better-sqlite3", "@node-rs/argon2", "libsodium-wrappers"],
   // Hide the floating Next.js dev badge in the lower-left.
