@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# When invoked as a real file (not via `curl | bash`), cd to the project root
+# so the script works regardless of which directory the user ran it from.
+# Detection: BASH_SOURCE[0] is a regular file AND its parent contains a
+# Launchpad package.json. The curl|bash path skips this branch and falls back
+# to the existing cwd-based bootstrap below.
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+  _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  if [ -f "$_SCRIPT_DIR/../package.json" ] \
+     && grep -q '"name": "launchpad"' "$_SCRIPT_DIR/../package.json" 2>/dev/null; then
+    cd "$_SCRIPT_DIR/.."
+  fi
+fi
+
 echo "================================================"
 echo " Launchpad — installer"
 echo "================================================"

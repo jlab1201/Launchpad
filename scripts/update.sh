@@ -17,6 +17,12 @@
 #
 set -euo pipefail
 
+# Resolve our own location and cd to the project root, so the script works
+# whether you run it as `./scripts/update.sh` from the install dir or as
+# `./update.sh` from inside the scripts/ directory itself.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
 echo "================================================"
 echo " Launchpad — updater"
 echo "================================================"
