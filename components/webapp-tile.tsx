@@ -1,15 +1,12 @@
 "use client";
 
-import { ExternalLink, RefreshCw } from "lucide-react";
-import { useCallback, useState } from "react";
-import { toast } from "sonner";
+import { ExternalLink } from "lucide-react";
+import { useState } from "react";
 import type { StatusResult, Webapp } from "@/lib/contracts";
-import { cn } from "@/lib/utils";
 
 interface WebappTileProps {
   webapp: Webapp;
   status: StatusResult | null;
-  vaultLocked?: boolean;
 }
 
 /** Generates a deterministic background colour from a string */
@@ -22,24 +19,7 @@ function seedColor(str: string): string {
   return `hsl(${hue}, 55%, 55%)`;
 }
 
-function StatusDot({
-  status,
-  vaultLocked,
-}: {
-  status: StatusResult | null;
-  vaultLocked?: boolean;
-}) {
-  if (vaultLocked) {
-    return (
-      <span
-        role="img"
-        title="Vault locked"
-        className="block h-2.5 w-2.5 rounded-full bg-yellow-400 ring-2 ring-background"
-        aria-label="Status: vault locked"
-      />
-    );
-  }
-
+function StatusDot({ status }: { status: StatusResult | null }) {
   if (!status) {
     return (
       <span
@@ -72,41 +52,11 @@ function StatusDot({
   );
 }
 
-export function WebappTile({ webapp, status, vaultLocked }: WebappTileProps) {
+export function WebappTile({ webapp, status }: WebappTileProps) {
   const [imgFailed, setImgFailed] = useState(false);
-  const [imgKey, setImgKey] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
 
   const accentColor = seedColor(webapp.name);
   const initial = webapp.name.charAt(0).toUpperCase();
-
-  const handleRefreshThumbnail = useCallback(
-    async (e: React.MouseEvent | React.KeyboardEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (refreshing) return;
-      setRefreshing(true);
-      try {
-        const res = await fetch(`/api/thumbnail?id=${webapp.id}`, {
-          method: "POST",
-        });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as { error?: unknown };
-          const reason = typeof body.error === "string" ? body.error : `HTTP ${res.status}`;
-          toast.error(`Could not refresh: ${reason}`);
-        } else {
-          setImgKey((k) => k + 1);
-          setImgFailed(false);
-          toast.success("Thumbnail refreshed");
-        }
-      } catch {
-        toast.error("Could not refresh thumbnail");
-      } finally {
-        setRefreshing(false);
-      }
-    },
-    [webapp.id, refreshing],
-  );
 
   return (
     <a
@@ -121,8 +71,7 @@ export function WebappTile({ webapp, status, vaultLocked }: WebappTileProps) {
         {!imgFailed ? (
           // biome-ignore lint/performance/noImgElement: thumbnail served from same-origin API route, next/image optimization not applicable
           <img
-            key={imgKey}
-            src={`/api/thumbnail/${webapp.id}?v=${imgKey}`}
+            src={`/api/thumbnail/${webapp.id}`}
             alt={`Screenshot of ${webapp.name}`}
             loading="lazy"
             className="h-full w-full object-cover"
@@ -140,26 +89,8 @@ export function WebappTile({ webapp, status, vaultLocked }: WebappTileProps) {
 
         {/* Status dot overlay */}
         <div className="absolute top-2 right-2">
-          <StatusDot status={status} vaultLocked={vaultLocked} />
+          <StatusDot status={status} />
         </div>
-
-        {/* Refresh button overlay */}
-        <button
-          type="button"
-          className={cn(
-            "absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md",
-            "bg-background/70 text-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
-            "backdrop-blur-sm transition-opacity hover:bg-background/90",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          )}
-          aria-label={`Refresh thumbnail for ${webapp.name}`}
-          onClick={(e) => void handleRefreshThumbnail(e)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") void handleRefreshThumbnail(e);
-          }}
-        >
-          <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
-        </button>
       </div>
 
       {/* Info row */}

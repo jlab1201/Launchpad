@@ -46,7 +46,6 @@ function EmptyState() {
 
 export function LaunchpadGrid({ initialApps }: LaunchpadGridProps) {
   const [apps, setApps] = useState<Webapp[]>(initialApps);
-  const [vaultLocked, setVaultLocked] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
 
   const appIds = apps.map((a) => a.id);
@@ -65,25 +64,6 @@ export function LaunchpadGrid({ initialApps }: LaunchpadGridProps) {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Poll vault status to know if vault is locked (affects badge colour)
-  useEffect(() => {
-    const check = async () => {
-      try {
-        const res = await fetch("/api/vault/status");
-        if (!res.ok) return;
-        const json = (await res.json()) as { data?: { locked: boolean } };
-        if (json.data !== undefined) {
-          setVaultLocked(json.data.locked);
-        }
-      } catch {
-        // ignore
-      }
-    };
-    void check();
-    const interval = setInterval(() => void check(), 30_000);
-    return () => clearInterval(interval);
   }, []);
 
   // Listen for settings-page mutations so grid can refresh
@@ -114,12 +94,7 @@ export function LaunchpadGrid({ initialApps }: LaunchpadGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {apps.map((webapp) => (
-        <WebappTile
-          key={webapp.id}
-          webapp={webapp}
-          status={statusMap[webapp.id] ?? null}
-          vaultLocked={vaultLocked}
-        />
+        <WebappTile key={webapp.id} webapp={webapp} status={statusMap[webapp.id] ?? null} />
       ))}
     </div>
   );
