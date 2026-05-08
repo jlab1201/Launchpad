@@ -133,6 +133,11 @@ fi
 
 INSTALL_DIR="$PWD"
 PNPM_BIN="$(command -v pnpm)"
+# Resolve the absolute directory of the Node binary in use (e.g. nvm install).
+# systemd-user services inherit only a minimal PATH, so without this the
+# spawned `node` can fall through to /usr/bin/node and fail with an ABI
+# mismatch against native modules built under a different Node version.
+NODE_BIN_DIR="$(dirname "$(command -v node)")"
 PID_FILE="$INSTALL_DIR/data/launchpad.pid"
 
 # Stop any previously-tracked instance so re-running the installer doesn't
@@ -224,6 +229,7 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=$INSTALL_DIR
 Environment=PORT=$PORT
+Environment=PATH=$NODE_BIN_DIR:/usr/local/bin:/usr/bin:/bin
 ExecStart=$PNPM_BIN start
 Restart=on-failure
 RestartSec=5
