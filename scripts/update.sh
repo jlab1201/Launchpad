@@ -41,6 +41,38 @@ if [ ! -x "./scripts/install.sh" ]; then
   exit 1
 fi
 
+# --- Snapshot data/ as a rollback point ---
+# Nothing in this script *should* clobber data/ (gitignored, git pull skips it,
+# tar -xz only writes archive paths, migrations are additive). But "should" is
+# not "guaranteed", and a single bad migration or wrong cwd would silently
+# nuke a user's vault. Take a single rolling snapshot at data.bak/ so we can
+# detect and reverse damage without depending on that chain holding.
+DATA_DIR="data"
+DATA_BAK="data.bak"
+PRE_WEBAPP_COUNT=""
+if [ -d "$DATA_DIR" ]; then
+  echo "Snapshotting $DATA_DIR/ → $DATA_BAK/ (rollback point) ..."
+  rm -rf "$DATA_BAK"
+  # cp -a preserves perms, mtimes, symlinks. better-sqlite3 in WAL mode keeps
+  # the live DB consistent on disk, so a plain copy is safe even if the app
+  # is currently running — the WAL/-shm files travel with the .sqlite file.
+  cp -a "$DATA_DIR" "$DATA_BAK"
+
+  # Capture the pre-update webapps row count via Node so we can diff after
+  # install.sh runs. Uses `--print` over a temp file to keep this stateless.
+  if [ -f "$DATA_DIR/db.sqlite" ] && command -v node >/dev/null 2>&1; then
+    PRE_WEBAPP_COUNT="$(node -e "
+      try {
+        const Database = require('better-sqlite3');
+        const db = new Database(process.argv[1], { readonly: true });
+        const tables = db.prepare(\"SELECT name FROM sqlite_master WHERE type='table' AND name='webapps'\").all();
+        if (tables.length === 0) { console.log(''); process.exit(0); }
+        console.log(db.prepare('SELECT COUNT(*) AS c FROM webapps').get().c);
+      } catch (e) { console.log(''); }
+    " "$DATA_DIR/db.sqlite" 2>/dev/null || true)"
+  fi
+fi
+
 # --- Pull latest source ---
 REPO_OWNER="${LAUNCHPAD_REPO_OWNER:-jlab1201}"
 REPO_NAME="${LAUNCHPAD_REPO_NAME:-Launchpad}"
@@ -77,6 +109,51 @@ echo ""
 echo "Re-running installer to apply updates ..."
 echo ""
 ./scripts/install.sh
+
+# --- Verify data/ survived the update ---
+# Two checks: (1) db.sqlite still exists and is non-empty, (2) the webapps row
+# count didn't shrink. If either fails, we restore from data.bak/ and abort
+# loudly — better to roll back automatically than ship a "successful" update
+# the user discovers an hour later in the empty UI.
+if [ -d "$DATA_BAK" ]; then
+  echo ""
+  echo "Verifying data/ integrity ..."
+
+  if [ ! -f "$DATA_DIR/db.sqlite" ] || [ ! -s "$DATA_DIR/db.sqlite" ]; then
+    echo "  ✗ $DATA_DIR/db.sqlite is missing or empty after update — rolling back." >&2
+    rm -rf "$DATA_DIR"
+    mv "$DATA_BAK" "$DATA_DIR"
+    echo "    Restored from snapshot. Investigate before re-running update.sh." >&2
+    exit 1
+  fi
+
+  if [ -n "$PRE_WEBAPP_COUNT" ] && command -v node >/dev/null 2>&1; then
+    POST_WEBAPP_COUNT="$(node -e "
+      try {
+        const Database = require('better-sqlite3');
+        const db = new Database(process.argv[1], { readonly: true });
+        const tables = db.prepare(\"SELECT name FROM sqlite_master WHERE type='table' AND name='webapps'\").all();
+        if (tables.length === 0) { console.log(''); process.exit(0); }
+        console.log(db.prepare('SELECT COUNT(*) AS c FROM webapps').get().c);
+      } catch (e) { console.log(''); }
+    " "$DATA_DIR/db.sqlite" 2>/dev/null || true)"
+
+    if [ -n "$POST_WEBAPP_COUNT" ] && [ "$POST_WEBAPP_COUNT" -lt "$PRE_WEBAPP_COUNT" ]; then
+      echo "  ✗ webapps row count shrank: $PRE_WEBAPP_COUNT → $POST_WEBAPP_COUNT — rolling back." >&2
+      rm -rf "$DATA_DIR"
+      mv "$DATA_BAK" "$DATA_DIR"
+      echo "    Restored from snapshot. Investigate before re-running update.sh." >&2
+      exit 1
+    fi
+    echo "  ✓ webapps preserved ($POST_WEBAPP_COUNT row(s)); db.sqlite intact."
+  else
+    echo "  ✓ db.sqlite intact (row-count diff skipped — node or pre-count unavailable)."
+  fi
+
+  # Snapshot stays at data.bak/ as a one-step rollback for the user. The next
+  # update.sh run will overwrite it, so it never accumulates.
+  echo "  Snapshot retained at $DATA_BAK/ — delete it manually once you're confident."
+fi
 
 # --- Verify boot-time autostart is actually configured ---
 # The installer prints its own banner, but on prod boxes the user often

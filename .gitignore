@@ -14,6 +14,9 @@ out/
 data/*
 !data/.gitkeep
 
+# Rolling rollback snapshot written by scripts/update.sh
+data.bak/
+
 # Logs
 *.log
 npm-debug.log*
