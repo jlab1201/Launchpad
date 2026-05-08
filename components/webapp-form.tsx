@@ -163,6 +163,14 @@ export function WebappForm({ initial, onSuccess, onCancel, onVaultLocked }: Weba
       }
 
       if (!res.ok) {
+        // 423 Locked: vault was unlocked at pre-flight but locked again before
+        // the POST landed (idle timeout). Re-open the unlock dialog instead of
+        // forcing the user to deduce the cause from a generic error toast.
+        if (res.status === 423) {
+          toast.warning("Unlock vault to save credentials");
+          onVaultLocked?.();
+          return;
+        }
         const json = (await res.json()) as { error?: { message?: string } };
         const msg = json?.error?.message ?? (isEdit ? "Update failed" : "Registration failed");
         toast.error(msg);

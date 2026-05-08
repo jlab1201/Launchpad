@@ -139,7 +139,15 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       encrypted = await encryptCredential(input.credential);
     } catch (err) {
       if (err instanceof VaultLockedError) {
-        return NextResponse.json({ error: "vault_locked" }, { status: 423 });
+        return NextResponse.json(
+          {
+            error: {
+              code: "VAULT_LOCKED",
+              message: "Vault is locked. Unlock it before saving credentials.",
+            },
+          },
+          { status: 423 },
+        );
       }
       throw err;
     }
