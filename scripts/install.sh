@@ -86,6 +86,21 @@ echo ""
 echo "Installing dependencies ..."
 pnpm install --frozen-lockfile
 
+# --- Rebuild native modules against the runtime Node ABI ---
+# Guards against stale better-sqlite3 binaries when the host's Node version,
+# glibc, or pnpm store has drifted from what produced the cached .node file.
+echo ""
+echo "Rebuilding native modules ..."
+pnpm rebuild better-sqlite3
+
+# --- Smoke-test the native binding so a broken install fails fast ---
+if ! node -e "require('better-sqlite3')" >/dev/null 2>&1; then
+  echo "Error: better-sqlite3 native binding failed to load." >&2
+  echo "Likely a Node.js version / ABI mismatch — check 'node --version'." >&2
+  exit 1
+fi
+echo "  better-sqlite3 native binding loads OK"
+
 # --- Install Playwright Chromium (browser binary only — no sudo / no OS deps) ---
 echo ""
 echo "Installing Playwright Chromium ..."
