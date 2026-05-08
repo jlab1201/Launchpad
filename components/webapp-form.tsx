@@ -169,10 +169,13 @@ export function WebappForm({ initial, onSuccess, onCancel, onVaultLocked }: Weba
         return;
       }
 
-      const json = (await res.json()) as { data?: Webapp };
-      if (json.data) {
-        toast.success(isEdit ? `${json.data.name} updated` : `${json.data.name} registered`);
-        onSuccess(json.data);
+      // POST returns { data: { webapp, credential? } }; PATCH returns { data: Webapp }.
+      const json = (await res.json()) as { data?: Webapp | { webapp: Webapp } };
+      const webapp =
+        json.data && "webapp" in json.data ? json.data.webapp : (json.data as Webapp | undefined);
+      if (webapp) {
+        toast.success(isEdit ? `${webapp.name} updated` : `${webapp.name} registered`);
+        onSuccess(webapp);
       }
     } catch {
       toast.error(isEdit ? "Update failed" : "Registration failed");

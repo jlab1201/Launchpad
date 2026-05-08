@@ -1,24 +1,34 @@
 /**
  * Settings / Registration UI — Phase 5.
- * Server component: fetches initial app list, renders SettingsPanel client component.
+ * Server component: reads the app list directly from the DB and renders the
+ * SettingsPanel client component. Direct DB read mirrors app/(dashboard)/page.tsx
+ * — avoids the host-header self-fetch surface and the http/https protocol
+ * mismatch that returned [] in production self-hosted deployments.
  */
-import { headers } from "next/headers";
-import Link from "next/link";
+import { asc } from "drizzle-orm";
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { SettingsPanel } from "@/components/settings-panel";
 import type { Webapp } from "@/lib/contracts";
+import { getDb } from "@/lib/db/client";
+import { webapps } from "@/lib/db/schema";
+
+export const dynamic = "force-dynamic";
 
 async function fetchApps(): Promise<Webapp[]> {
   try {
-    const hdrs = await headers();
-    const host = hdrs.get("host") ?? "localhost:15123";
-    const proto = process.env.NODE_ENV === "production" ? "https" : "http";
-    const res = await fetch(`${proto}://${host}/api/apps`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    const json = (await res.json()) as { data?: Webapp[] };
-    return json.data ?? [];
+    const db = getDb();
+    const rows = await db.select().from(webapps).orderBy(asc(webapps.createdAt));
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      url: row.url,
+      authType: row.authType as Webapp["authType"],
+      autoScreenshot: row.autoScreenshot === 1,
+      thumbnailUrl: row.thumbnailUrl ?? null,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    }));
   } catch {
     return [];
   }
