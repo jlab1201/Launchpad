@@ -12,6 +12,12 @@ import type { Webapp } from "@/lib/contracts";
 import { getDb } from "@/lib/db/client";
 import { webapps } from "@/lib/db/schema";
 
+// Without this, Next.js statically optimizes the page and the grid stays
+// stuck on the initial DB snapshot until the next build. force-dynamic makes
+// the server component re-run on every request, so newly-registered apps
+// appear as soon as the user navigates back to /.
+export const dynamic = "force-dynamic";
+
 async function fetchApps(): Promise<Webapp[]> {
   try {
     const db = getDb();
