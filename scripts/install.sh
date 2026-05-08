@@ -123,6 +123,49 @@ if [ -f "$PID_FILE" ]; then
   rm -f "$PID_FILE"
 fi
 
+# Stop any previously-managed systemd user service too — it wouldn't have a
+# PID file, but it would still hold the port.
+if command -v systemctl >/dev/null 2>&1 \
+   && systemctl --user is-system-running --quiet >/dev/null 2>&1; then
+  systemctl --user stop launchpad.service >/dev/null 2>&1 || true
+fi
+
+# Probe forward from $PORT until we find a free TCP port. Caps at +50 to
+# avoid runaway scans. Falls back to attempting the requested port directly
+# if `ss` isn't installed.
+port_in_use() {
+  local p="$1"
+  ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${p}\$"
+}
+
+if command -v ss >/dev/null 2>&1; then
+  REQUESTED_PORT="$PORT"
+  MAX_PORT=$((PORT + 50))
+  while [ "$PORT" -le "$MAX_PORT" ] && port_in_use "$PORT"; do
+    PORT=$((PORT + 1))
+  done
+  if [ "$PORT" -gt "$MAX_PORT" ]; then
+    echo "Error: no free port found in range $REQUESTED_PORT–$MAX_PORT." >&2
+    exit 1
+  fi
+  if [ "$PORT" != "$REQUESTED_PORT" ]; then
+    echo "Port $REQUESTED_PORT is in use; using port $PORT instead."
+  fi
+  export PORT
+fi
+
+# Persist the resolved port in .env.local so manual `pnpm start` picks the
+# same value next time (the systemd unit also embeds it via Environment=).
+if [ -f .env.local ]; then
+  if grep -q "^PORT=" .env.local; then
+    # Portable in-place edit across GNU and BSD sed.
+    sed "s/^PORT=.*/PORT=$PORT/" .env.local > .env.local.tmp \
+      && mv .env.local.tmp .env.local
+  else
+    echo "PORT=$PORT" >> .env.local
+  fi
+fi
+
 # Prefer a systemd user service (survives terminal close AND system reboot).
 # Fall back to nohup-detached process when systemd isn't available (e.g.
 # WSL2 without `systemd=true` in /etc/wsl.conf).
