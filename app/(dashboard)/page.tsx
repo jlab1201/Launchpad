@@ -37,9 +37,6 @@ export default async function LaunchpadPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Launchpad</h1>
-      </div>
       <LaunchpadGrid initialApps={apps} />
     </div>
   );
