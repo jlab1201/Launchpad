@@ -3,8 +3,9 @@
 # Launchpad — updater.
 #
 # Pulls the latest source for the current install and re-runs the installer,
-# which handles deps, migrations, build, and a clean restart of the running
-# service (systemd or nohup-tracked PID file).
+# which handles deps, migrations, build, a clean restart of the running
+# service (systemd or nohup-tracked PID file), AND refreshes the boot-time
+# autostart hook (systemd user service + linger, or `cron @reboot` fallback).
 #
 # Run from inside your Launchpad install directory:
 #   cd ~/launchpad && ./scripts/update.sh
@@ -75,4 +76,33 @@ fi
 echo ""
 echo "Re-running installer to apply updates ..."
 echo ""
-exec ./scripts/install.sh
+./scripts/install.sh
+
+# --- Verify boot-time autostart is actually configured ---
+# The installer prints its own banner, but on prod boxes the user often
+# scripts `update.sh` non-interactively and only checks the exit code. A
+# missing autostart hook would otherwise be invisible until the next reboot.
+echo ""
+echo "Verifying boot-time autostart ..."
+AUTOSTART_OK=0
+if command -v systemctl >/dev/null 2>&1 \
+   && systemctl --user is-enabled launchpad.service >/dev/null 2>&1; then
+  if command -v loginctl >/dev/null 2>&1 \
+     && loginctl show-user "$USER" 2>/dev/null | grep -q '^Linger=yes'; then
+    echo "  ✓ systemd user service enabled + linger on — starts at boot."
+    AUTOSTART_OK=1
+  else
+    echo "  ! systemd user service enabled, but linger is OFF."
+    echo "    The app will only start when '$USER' logs in, NOT at boot."
+    echo "    Fix: sudo loginctl enable-linger $USER"
+  fi
+elif command -v crontab >/dev/null 2>&1 \
+     && crontab -l 2>/dev/null | grep -q '# launchpad-autostart'; then
+  echo "  ✓ cron @reboot hook registered — starts at boot (no systemd)."
+  AUTOSTART_OK=1
+else
+  echo "  ! No autostart hook detected. The app will NOT come back after reboot."
+  echo "    Re-run install.sh on a host with systemd or cron available."
+fi
+
+[ "$AUTOSTART_OK" = "1" ] || exit 1
