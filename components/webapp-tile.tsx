@@ -87,13 +87,14 @@ export function WebappTile({ webapp, status, vaultLocked }: WebappTileProps) {
       if (refreshing) return;
       setRefreshing(true);
       try {
-        const res = await fetch(`/api/thumbnail/refresh?id=${webapp.id}`, {
+        const res = await fetch(`/api/thumbnail?id=${webapp.id}`, {
           method: "POST",
         });
-        if (!res.ok && res.status !== 501) {
-          toast.error("Could not refresh thumbnail");
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: unknown };
+          const reason = typeof body.error === "string" ? body.error : `HTTP ${res.status}`;
+          toast.error(`Could not refresh: ${reason}`);
         } else {
-          // Bust the cache on the img element
           setImgKey((k) => k + 1);
           setImgFailed(false);
           toast.success("Thumbnail refreshed");

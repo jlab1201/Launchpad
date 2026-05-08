@@ -14,6 +14,7 @@ import { RegisterAppInputSchema } from "@/lib/contracts";
 import { getDb } from "@/lib/db/client";
 import { credentials, webapps } from "@/lib/db/schema";
 import { assertSameOrigin } from "@/lib/security/origin";
+import { triggerRefresh } from "@/lib/thumbnails/scheduler";
 import { encryptCredential, VaultLockedError } from "@/lib/vault";
 
 export async function GET() {
@@ -131,6 +132,10 @@ export async function POST(req: NextRequest) {
           .run();
       })();
 
+      if (input.autoScreenshot) {
+        void triggerRefresh(appId).catch(() => undefined);
+      }
+
       return NextResponse.json(
         {
           data: {
@@ -168,6 +173,10 @@ export async function POST(req: NextRequest) {
     autoScreenshot: input.autoScreenshot ? 1 : 0,
     thumbnailUrl,
   });
+
+  if (input.autoScreenshot) {
+    void triggerRefresh(appId).catch(() => undefined);
+  }
 
   return NextResponse.json(
     {
