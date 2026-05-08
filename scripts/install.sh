@@ -103,17 +103,104 @@ if [ "${LAUNCHPAD_NO_START:-0}" = "1" ]; then
   exit 0
 fi
 
-echo ""
-echo "================================================"
-echo "✓ Install complete. Starting Launchpad ..."
-echo ""
-echo "  URL:    http://localhost:${PORT}"
-echo "  Stop:   Ctrl+C"
-echo ""
-echo "  Your first visit will prompt you to set the master vault passphrase."
-echo "  To skip autostart on future installs, set LAUNCHPAD_NO_START=1."
-echo "================================================"
-echo ""
+INSTALL_DIR="$PWD"
+PNPM_BIN="$(command -v pnpm)"
+PID_FILE="$INSTALL_DIR/data/launchpad.pid"
 
-# `exec` so Ctrl+C goes straight to Next.js with no shell sitting in the middle.
-exec pnpm start
+# Stop any previously-tracked instance so re-running the installer doesn't
+# fight itself for the port.
+if [ -f "$PID_FILE" ]; then
+  PREV_PID="$(cat "$PID_FILE" 2>/dev/null || true)"
+  if [ -n "$PREV_PID" ] && kill -0 "$PREV_PID" 2>/dev/null; then
+    echo "Stopping previous Launchpad process (PID $PREV_PID) ..."
+    kill "$PREV_PID" 2>/dev/null || true
+    for _ in 1 2 3 4 5; do
+      kill -0 "$PREV_PID" 2>/dev/null || break
+      sleep 1
+    done
+    kill -9 "$PREV_PID" 2>/dev/null || true
+  fi
+  rm -f "$PID_FILE"
+fi
+
+# Prefer a systemd user service (survives terminal close AND system reboot).
+# Fall back to nohup-detached process when systemd isn't available (e.g.
+# WSL2 without `systemd=true` in /etc/wsl.conf).
+USE_SYSTEMD=0
+if command -v systemctl >/dev/null 2>&1 \
+   && systemctl --user is-system-running --quiet >/dev/null 2>&1; then
+  USE_SYSTEMD=1
+fi
+
+if [ "$USE_SYSTEMD" = "1" ]; then
+  SYSTEMD_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
+  SERVICE_FILE="$SYSTEMD_DIR/launchpad.service"
+  mkdir -p "$SYSTEMD_DIR"
+  cat > "$SERVICE_FILE" <<EOF
+[Unit]
+Description=Launchpad
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=$INSTALL_DIR
+Environment=PORT=$PORT
+ExecStart=$PNPM_BIN start
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+EOF
+  systemctl --user daemon-reload
+  systemctl --user enable launchpad.service >/dev/null
+  systemctl --user restart launchpad.service
+  # Linger keeps user services running across logout/reboot. Best-effort —
+  # falls through silently if polkit denies it.
+  if command -v loginctl >/dev/null 2>&1; then
+    loginctl enable-linger "$USER" >/dev/null 2>&1 || true
+  fi
+  cat <<EOF
+
+================================================
+✓ Launchpad started as a systemd user service.
+  URL:    http://localhost:${PORT}
+  Status: systemctl --user status launchpad
+  Logs:   journalctl --user -u launchpad -f
+  Stop:   systemctl --user stop launchpad
+
+  Your first visit will prompt you to set the master vault passphrase.
+================================================
+EOF
+else
+  LOG_FILE="$INSTALL_DIR/launchpad.log"
+  nohup "$PNPM_BIN" start > "$LOG_FILE" 2>&1 < /dev/null &
+  APP_PID=$!
+  disown "$APP_PID" 2>/dev/null || true
+  echo "$APP_PID" > "$PID_FILE"
+  # Fail fast on common errors (port-in-use, missing build, etc.).
+  sleep 2
+  if ! kill -0 "$APP_PID" 2>/dev/null; then
+    echo "Error: Launchpad failed to start. Last 20 log lines:" >&2
+    tail -20 "$LOG_FILE" >&2 || true
+    rm -f "$PID_FILE"
+    exit 1
+  fi
+  cat <<EOF
+
+================================================
+✓ Launchpad running in the background (PID $APP_PID).
+  URL:    http://localhost:${PORT}
+  Logs:   tail -f $LOG_FILE
+  Stop:   kill \$(cat $PID_FILE)
+
+  systemd isn't available, so the app won't restart automatically on
+  reboot. To enable persistent autostart on WSL2:
+    1. Add 'systemd=true' under [boot] in /etc/wsl.conf
+    2. Run 'wsl --shutdown' from Windows, then re-run this installer.
+
+  Your first visit will prompt you to set the master vault passphrase.
+================================================
+EOF
+fi
